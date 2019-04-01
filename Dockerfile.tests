@@ -1,0 +1,13 @@
+FROM python:3.7.3-stretch
+
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+RUN mkdir /src/
+
+WORKDIR /src/
+
+COPY prometheus_redis_client ./prometheus_redis_client/
+COPY tests ./tests
+
+CMD pwd && ls -al && pytest -v

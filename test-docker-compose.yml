@@ -1,0 +1,10 @@
+version: '3'
+services:
+  redis:
+    image: redis:latest
+  tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.tests
+    depends_on:
+      - redis
