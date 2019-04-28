@@ -138,3 +138,33 @@ class TestHistogram(object):
 
                 histogram.observe(1)
             assert mock_logger.called
+
+    def test_timeit_wrapper(self):
+        """Test `timeit` wrapper for Histogram metric."""
+
+        with MetricEnvironment():
+
+            histogram = prom.Histogram(
+                name="test_histogram",
+                documentation="Histogram documentation",
+                buckets=[0, 1, 2.001, 3],
+            )
+
+            @histogram.timeit()
+            def simple_func():
+                import time
+                time.sleep(0.01)
+                return
+
+            simple_func()
+
+            assert prom.REGISTRY.output().startswith(
+                '# HELP test_histogram Histogram documentation\n'
+                '# TYPE test_histogram histogram\n'
+                'test_histogram_bucket{le="0"} 0\n'
+                'test_histogram_bucket{le="1"} 1\n'
+                'test_histogram_bucket{le="2.001"} 1\n'
+                'test_histogram_bucket{le="3"} 1\n'
+                'test_histogram_count 1\n'
+                'test_histogram_sum 0.01'
+            )

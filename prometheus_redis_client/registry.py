@@ -8,10 +8,11 @@ class Refresher(object):
 
     default_refresh_period = 30
 
-    def __init__(self, refresh_period: float = default_refresh_period):
+    def __init__(self, refresh_period: float = default_refresh_period, timeout_granule=1):
         self._refresh_functions_lock = threading.Lock()
         self._start_thread_lock = threading.Lock()
         self.refresh_period = refresh_period
+        self.timeout_granule = timeout_granule
         self._clean()
 
     def _clean(self):
@@ -39,13 +40,19 @@ class Refresher(object):
         self._clean()
 
     def refresh_cycle(self):
+        """Check `close` flag every `timeout_granule` and refresh after `refresh_period`."""
+        current_time_passed = 0
         while True:
-            with self._refresh_functions_lock:
-                if self._should_be_close:
-                    return
-                for refresh_func in self._refresh_functions:
-                    refresh_func()
-            time.sleep(self.refresh_period)
+            current_time_passed += self.timeout_granule
+            if self._should_be_close:
+                return
+            if current_time_passed >= self.refresh_period:
+                current_time_passed = 0
+                with self._refresh_functions_lock:
+
+                    for refresh_func in self._refresh_functions:
+                        refresh_func()
+            time.sleep(self.timeout_granule)
 
 
 class Registry(object):

@@ -2,8 +2,10 @@ import copy
 import json
 import collections
 import threading
+from functools import partial
 
 from prometheus_redis_client.base_metric import BaseMetric, MetricRepresentation, silent_wrapper
+from prometheus_redis_client.helpers import timeit
 
 DEFAULT_GAUGE_INDEX_KEY = 'GLOBAL_GAUGE_INDEX'
 
@@ -32,6 +34,30 @@ class Metric(BaseMetric):
 
     def cleanup(self):
         pass
+
+
+class CommonGauge(Metric):
+    """Just simple store some value in one key from all processes."""
+
+    type = 'gauge'
+    wrapped_functions_names = ['set']
+
+    def set(self, value, labels=None):
+        labels = labels or {}
+        self._check_labels(labels)
+        if value is None:
+            raise ValueError('value can not be None')
+        self._set(value, labels)
+
+    @silent_wrapper
+    def _set(self, value, labels):
+        group_key = self.get_metric_group_key()
+        metric_key = self.get_metric_key(labels)
+
+        pipeline = self.registry.redis.pipeline()
+        pipeline.sadd(group_key, metric_key)
+        pipeline.set(metric_key, value)
+        return pipeline.execute()
 
 
 class Counter(Metric):
@@ -67,9 +93,14 @@ class Summary(Metric):
     type = 'summary'
     wrapped_functions_names = ['observe', ]
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.timeit = partial(timeit, metric_callback=self.observe)
+
     def observe(self, value, labels=None):
         labels = labels or {}
         self._check_labels(labels)
+        print('DEBUG:', value, labels)
         return self._observer(value, labels)
 
     @silent_wrapper
@@ -209,6 +240,7 @@ class Histogram(Metric):
     def __init__(self, *args, buckets: list, **kwargs):
         super().__init__(*args, **kwargs)
         self.buckets = sorted(buckets, reverse=True)
+        self.timeit = partial(timeit, metric_callback=self.observe)
 
     def observe(self, value, labels=None):
         labels = labels or {}

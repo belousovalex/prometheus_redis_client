@@ -1,13 +1,15 @@
-FROM python:3.7.3-stretch
+FROM belousovalex/tox_image
 
 COPY requirements.txt .
-RUN pip install -r requirements.txt
+RUN pip install -r requirements.txt && pip install tox==3.9.0
 
 RUN mkdir /src/
 
 WORKDIR /src/
 
+COPY setup.py .
+COPY tox.ini .
 COPY prometheus_redis_client ./prometheus_redis_client/
 COPY tests ./tests
 
-CMD pwd && ls -al && pytest -v
+CMD tox

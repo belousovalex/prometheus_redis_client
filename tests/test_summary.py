@@ -1,3 +1,4 @@
+import re
 from unittest.mock import patch
 
 import pytest
@@ -99,3 +100,29 @@ class TestSummary(object):
 
                 summary.observe(1)
             assert mock_logger.called
+
+    def test_timeit_wrapper(self):
+        """Test `timeit` wrapper for Summary metric."""
+
+        with MetricEnvironment():
+
+            summary = prom.Summary(
+                name="test_summary",
+                documentation="Summary documentation",
+                labelnames=['name'],
+            )
+
+            @summary.timeit(name="Hi!")
+            def simple_func():
+                import time
+                time.sleep(0.01)
+                return
+
+            simple_func()
+
+            assert prom.REGISTRY.output().startswith(
+                '# HELP test_summary Summary documentation\n'
+                '# TYPE test_summary summary\n'
+                'test_summary_count{name="Hi!"} 1\n'
+                'test_summary_sum{name="Hi!"} 0.01'
+            )
