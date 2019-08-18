@@ -6,6 +6,7 @@ from functools import partial
 
 from prometheus_redis_client.base_metric import BaseMetric, MetricRepresentation, silent_wrapper
 from prometheus_redis_client.helpers import timeit
+from prometheus_redis_client.registry import Registry, REGISTRY
 
 DEFAULT_GAUGE_INDEX_KEY = 'GLOBAL_GAUGE_INDEX'
 
@@ -42,21 +43,36 @@ class CommonGauge(Metric):
     type = 'gauge'
     wrapped_functions_names = ['set']
 
-    def set(self, value, labels=None):
+    def __init__(self, name: str,
+                 documentation: str, labelnames: list = None,
+                 registry: Registry=REGISTRY, expire: float = None):
+        """
+        Construct CommonGauge metric.
+        :param name: name of metric
+        :param documentation: metric description
+        :param labelnames: list of metric labels
+        :param registry: the Registry object collect Metric for representation
+        :param expire: equivalent Redis `expire`; after that timeout Redis delete key. It useful when
+        you want know if metric does not set a long time.
+        """
+        super().__init__(name, documentation, labelnames, registry)
+        self._expire = expire
+
+    def set(self, value, labels=None, expire: float = None):
         labels = labels or {}
         self._check_labels(labels)
         if value is None:
             raise ValueError('value can not be None')
-        self._set(value, labels)
+        self._set(value, labels, expire=expire or self._expire)
 
     @silent_wrapper
-    def _set(self, value, labels):
+    def _set(self, value, labels, expire: float = None):
         group_key = self.get_metric_group_key()
         metric_key = self.get_metric_key(labels)
 
         pipeline = self.registry.redis.pipeline()
         pipeline.sadd(group_key, metric_key)
-        pipeline.set(metric_key, value)
+        pipeline.set(metric_key, value, ex=expire)
         return pipeline.execute()
 
 

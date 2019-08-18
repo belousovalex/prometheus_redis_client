@@ -1,3 +1,4 @@
+import time
 from unittest.mock import patch
 import pytest
 
@@ -51,8 +52,8 @@ class TestCommonGauge(object):
             )
 
             # need 'url' label
-            with pytest.raises(ValueError):
-                const.labels(host="123.123.123.123").inc()
+            with pytest.raises(ValueError, match="Expect define all labels: host, url. Got only: host"):
+                const.labels(host="123.123.123.123").set(12)
 
             # need use labels method
             with pytest.raises(Exception):
@@ -73,6 +74,56 @@ class TestCommonGauge(object):
                 "# HELP test_const2 Const documentation\n"
                 "# TYPE test_const2 gauge\n" 
                 "test_const2{host=\"123.123.123.123\",url=\"/home/\"} 3"
+            )
+
+    @patch('prometheus_redis_client.base_metric.logger.exception')
+    def test_expire(self, mock_lgger):
+        """
+        Test expire mode for CommonGauge metrics.
+        If we set expire param in _init__ then after `expire` seconds Redis delete our metric value.
+        Other value should be available.
+        """
+        with MetricEnvironment() as redis:
+            const = prom.CommonGauge(
+                name="test_const2",
+                documentation="Const documentation",
+                labelnames=["host", "url"],
+                expire=2,
+            )
+
+            const.labels(host="123.123.123.123", url="/home/").set(12, expire=3)
+            const.labels(host="124.124.124.124", url="/home/").set(24)  # its should be expire after 2 seconds
+
+            assert (prom.REGISTRY.output()) == (
+                "# HELP test_const2 Const documentation\n"
+                "# TYPE test_const2 gauge\n"
+                "test_const2{host=\"123.123.123.123\",url=\"/home/\"} 12\n"
+                "test_const2{host=\"124.124.124.124\",url=\"/home/\"} 24"
+            )
+
+            time.sleep(1)
+            const.labels(host="136.136.136.136", url="/home/").set(36)
+
+            assert (prom.REGISTRY.output()) == (
+                "# HELP test_const2 Const documentation\n"
+                "# TYPE test_const2 gauge\n"
+                "test_const2{host=\"123.123.123.123\",url=\"/home/\"} 12\n"
+                "test_const2{host=\"124.124.124.124\",url=\"/home/\"} 24\n"
+                "test_const2{host=\"136.136.136.136\",url=\"/home/\"} 36"
+            )
+            time.sleep(1.5)
+
+            assert (prom.REGISTRY.output()) == (
+                "# HELP test_const2 Const documentation\n"
+                "# TYPE test_const2 gauge\n"
+                "test_const2{host=\"123.123.123.123\",url=\"/home/\"} 12\n"
+                "test_const2{host=\"136.136.136.136\",url=\"/home/\"} 36"
+            )
+
+            time.sleep(1)
+            assert (prom.REGISTRY.output()) == (
+                "# HELP test_const2 Const documentation\n"
+                "# TYPE test_const2 gauge"
             )
 
     @patch('prometheus_redis_client.base_metric.logger.exception')

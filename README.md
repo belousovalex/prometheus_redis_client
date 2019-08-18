@@ -107,11 +107,17 @@ Represent as Gauge metric in output for Prometheus.
         'Common gauge with labels',
         labelnames=["name"],
     )
+    gauge_with_labels_and_expire  = CommonGauge(
+        'common_gauge_with_labels', 
+        'Common gauge with labels',
+        labelnames=["name"],
+        expire=2,  # if you make set() then after 2 seconds Redis delete key/value for metric with given labels 
+    )
     
     def some_function():
         ...
-        simple_gauge.observe(2.34)
-        gauge_with_labels.labels(name="piter").observe(0.43)
+        simple_gauge.set(2.34)
+        gauge_with_labels.labels(name="piter").set(0.43)
         ...
         
 ##### Gauge

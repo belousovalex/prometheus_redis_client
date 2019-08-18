@@ -1,6 +1,11 @@
 # Changelog
 
 
+#### 0.3.0
+
+* Fix documentation
+* Add expire for CommonGauge.
+
 #### 0.2.0
 
 * Add CommonGauge metric.

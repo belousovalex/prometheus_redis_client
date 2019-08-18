@@ -11,5 +11,7 @@ def MetricEnvironment():
     refresher = prom.Refresher(refresh_period=2)
     prom.REGISTRY.set_redis(redis_client)
     prom.REGISTRY.set_refresher(refresher)
-    yield redis_client
-    prom.REGISTRY.cleanup_and_stop()
+    try:
+        yield redis_client
+    finally:
+        prom.REGISTRY.cleanup_and_stop()
