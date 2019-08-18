@@ -134,8 +134,8 @@ Gauge metric per process. Add `gauge_index` label to metric as process identifie
     
     def some_function():
         ...
-        simple_gauge.observe(2.34)
-        gauge_with_labels.labels(name="piter").observe(0.43)
+        simple_gauge.set(2.34)
+        gauge_with_labels.labels(name="piter").set(0.43)
         ...
 
 Only Gauge metric set per process. 
