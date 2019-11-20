@@ -96,7 +96,7 @@ You can use decorator for time function.
         
 ##### CommonGauge
 
-CommonGauge its simple metric that set value to same Redis key from any process.
+CommonGauge its simple metric that set, increment or decrement value to same Redis key from any process.
 
 Represent as Gauge metric in output for Prometheus.
 

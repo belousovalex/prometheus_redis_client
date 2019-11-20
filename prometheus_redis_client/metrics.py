@@ -41,7 +41,7 @@ class CommonGauge(Metric):
     """Just simple store some value in one key from all processes."""
 
     type = 'gauge'
-    wrapped_functions_names = ['set']
+    wrapped_functions_names = ['set', 'inc', 'dec']
 
     def __init__(self, name: str,
                  documentation: str, labelnames: list = None,
@@ -74,6 +74,27 @@ class CommonGauge(Metric):
         pipeline.sadd(group_key, metric_key)
         pipeline.set(metric_key, value, ex=expire)
         return pipeline.execute()
+
+    def inc(self, value: float = 1, labels=None, expire: float = None):
+        labels = labels or {}
+        self._check_labels(labels)
+        return self._inc(value, labels, expire=expire or self._expire)
+
+    def dec(self, value: float = 1, labels=None, expire: float = None):
+        labels = labels or {}
+        self._check_labels(labels)
+        return self._inc(-value, labels, expire=expire or self._expire)
+
+    @silent_wrapper
+    def _inc(self, value: float, labels: dict, expire: float = None):
+        group_key = self.get_metric_group_key()
+        metric_key = self.get_metric_key(labels)
+        pipeline = self.registry.redis.pipeline()
+        pipeline.sadd(group_key, metric_key)
+        pipeline.incrbyfloat(metric_key, float(value))
+        if expire:
+            pipeline.expire(metric_key, expire)
+        return pipeline.execute()[1]
 
 
 class Counter(Metric):
