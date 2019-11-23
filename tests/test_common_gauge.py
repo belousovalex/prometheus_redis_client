@@ -36,10 +36,16 @@ class TestCommonGauge(object):
             const.set(3)
             assert float(redis.get(metric_key)) == 3
 
+            const.inc(1.2)
+            assert float(redis.get(metric_key)) == 4.2
+
+            const.dec(2.1)
+            assert float(redis.get(metric_key)) == 2.1
+
             assert (prom.REGISTRY.output()) == (
                 "# HELP test_const1 Const metric documentation\n"
-                "# TYPE test_const1 gauge\n" 
-                "test_const1 3"
+                "# TYPE test_const1 gauge\n"
+                "test_const1 2.1"
             )
 
     def test_interface_with_labels(self):
@@ -70,10 +76,16 @@ class TestCommonGauge(object):
             const.labels(**labels).set(3)
             assert int(redis.get(metric_key)) == 3
 
+            const.labels(**labels).inc(1.2)
+            assert float(redis.get(metric_key)) == 4.2
+
+            const.labels(**labels).dec(2.1)
+            assert float(redis.get(metric_key)) == 2.1
+
             assert (prom.REGISTRY.output()) == (
                 "# HELP test_const2 Const documentation\n"
-                "# TYPE test_const2 gauge\n" 
-                "test_const2{host=\"123.123.123.123\",url=\"/home/\"} 3"
+                "# TYPE test_const2 gauge\n"
+                "test_const2{host=\"123.123.123.123\",url=\"/home/\"} 2.1"
             )
 
     @patch('prometheus_redis_client.base_metric.logger.exception')
