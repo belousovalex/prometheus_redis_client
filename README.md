@@ -32,13 +32,24 @@ Registry contains redis client. So you can store metric values in different Redi
         'Counter with labels',
         labelnames=["name"],
     )
-    
+
+* increase counter
+
     def some_function():
         ...
         simple_cointer.inc()
         counter_with_labels.labels(name="piter").inc(2)
         ...
-        
+
+
+* support for set current value
+ 
+    def some_function():
+        ...
+        simple_cointer.set(100)
+        counter_with_labels.labels(name="piter").set(2)
+        ...
+
 ##### Summary
 
     from prometheus_redis_client import Summary

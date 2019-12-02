@@ -99,7 +99,7 @@ class CommonGauge(Metric):
 
 class Counter(Metric):
     type = 'counter'
-    wrapped_functions_names = ['inc', ]
+    wrapped_functions_names = ['inc', 'set']
 
     def inc(self, value: int = 1, labels=None):
         """
@@ -123,6 +123,30 @@ class Counter(Metric):
         pipeline = self.registry.redis.pipeline()
         pipeline.sadd(group_key, metric_key)
         pipeline.incrby(metric_key, int(value))
+        return pipeline.execute()[1]
+
+    def set(self, value: int = 1, labels=None):
+        """
+        Calculate metric with labels redis key.
+        Set this key to set of key for this metric.
+        """
+        labels = labels or {}
+        self._check_labels(labels)
+
+        if not isinstance(value, int):
+            raise ValueError("Value should be int, got {}".format(
+                type(value)
+            ))
+        return self._set(value, labels)
+
+    @silent_wrapper
+    def _set(self, value: int, labels: dict):
+        group_key = self.get_metric_group_key()
+        metric_key = self.get_metric_key(labels)
+
+        pipeline = self.registry.redis.pipeline()
+        pipeline.sadd(group_key, metric_key)
+        pipeline.set(metric_key, int(value))
         return pipeline.execute()[1]
 
 

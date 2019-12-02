@@ -27,7 +27,7 @@ class TestCounter(object):
 
             assert (prom.REGISTRY.output()) == (
                 "# HELP test_counter1 Counter documentation\n"
-                "# TYPE test_counter1 counter\n" 
+                "# TYPE test_counter1 counter\n"
                 "test_counter1 4"
             )
 
@@ -80,3 +80,31 @@ class TestCounter(object):
 
                 counter.inc()
             assert mock_logger.called
+
+
+    def test_add_interface_without_labels(self):
+        with MetricEnvironment() as redis:
+
+            counter = prom.Counter(
+                name="test_counter1",
+                documentation="Counter documentation"
+            )
+
+            counter.set(1)
+            group_key = counter.get_metric_group_key()
+            metric_key = counter.get_metric_key({})
+
+            assert redis.smembers(group_key) == {b'test_counter1:e30='}
+            assert int(redis.get(metric_key)) == 1
+
+            counter.set(30)
+            assert float(redis.get(metric_key)) == 30
+
+            counter.set(10)
+            assert float(redis.get(metric_key)) == 10
+
+            assert (prom.REGISTRY.output()) == (
+                "# HELP test_counter1 Counter documentation\n"
+                "# TYPE test_counter1 counter\n"
+                "test_counter1 10"
+            )
