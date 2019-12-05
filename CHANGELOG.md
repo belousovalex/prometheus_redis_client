@@ -1,6 +1,14 @@
 # Changelog
 
 
+#### 0.5.0
+
+* Add `set` to Counter (@darkman66)
+
+#### 0.4.0
+
+* Add `inc` and `dec` to CommonGauge (@maxfrei)
+
 #### 0.3.0
 
 * Fix documentation

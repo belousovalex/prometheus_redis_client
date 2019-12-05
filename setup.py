@@ -3,7 +3,7 @@ from distutils.core import setup
 setup(
     name='prometheus_redis_client',
     packages=['prometheus_redis_client'],
-    version='0.3.0',
+    version='0.5.0',
     description='Python prometheus multiprocessing client which used redis as metric storage.',
     author='Belousov Alex',
     author_email='belousov.aka.alfa@gmail.com',

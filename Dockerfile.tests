@@ -1,7 +1,7 @@
 FROM belousovalex/tox_image
 
 COPY requirements.txt .
-RUN pip install -r requirements.txt && pip install tox==3.9.0
+RUN pip3 install -r requirements.txt && pip3 install tox==3.9.0
 
 RUN mkdir /src/
 
