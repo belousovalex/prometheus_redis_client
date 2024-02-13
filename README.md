@@ -16,6 +16,12 @@ You can make global variable and use it when you want change metrics value. Supp
 Each metric variable bind to some `prometheus_redis_client.Registry` object. By default its `prometheus_redis_client.REGISTRY`.
 Registry contains redis client. So you can store metric values in different Redis instance if you make you own Registry object and bind it with your metrics. 
 
+### Setup VENV
+  ```
+  $ virtualenv venv --python=python
+  $ source venv/bin/activate
+  ```
+
 ##### Setup REGISTRY
 
     import redis

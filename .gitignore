@@ -7,3 +7,4 @@ Pipfile
 Pipfile.lock
 MANIFEST
 *.pyc
+venv
